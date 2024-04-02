@@ -50,7 +50,7 @@ def run():
             st.text_input("Dataset", key="dataset", value="iowa_liquor_sales")
             st.form_submit_button("Submit", on_click=load_ddls)
 
-    st.session_state.llm = VertexAI(model_name="code-bison@002", max_output_tokens=2048)
+    st.session_state.llm = VertexAI(model_name="gemini-pro", max_output_tokens=2048)
     load_ddls()
 
     if "messages" not in st.session_state:
