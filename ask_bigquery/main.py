@@ -1,11 +1,14 @@
+from typing import List
+
 import google.api_core.exceptions
 import google.cloud.bigquery as bq
 import streamlit as st
 from langchain_community.document_loaders import BigQueryLoader
-from langchain_core.runnables import RunnablePassthrough
+from langchain_core.documents import Document
 from langchain_core.prompts import PromptTemplate
-from langchain_google_vertexai import VertexAI
 from langchain_core.prompts.base import format_document
+from langchain_core.runnables import RunnablePassthrough
+from langchain_google_vertexai import VertexAI
 
 
 def sanitize_query(query):
@@ -20,21 +23,33 @@ def get_ddls_query(project, dataset):
             ORDER BY table_name;"""
 
 
-def load_ddls():
-    print(f"load_ddls for {st.session_state.project}.{st.session_state.dataset}")
+def get_bigquery_models(project, dataset) -> List[Document]:
+    bq_client = bq.Client(project=project)
+    models = bq_client.list_models(dataset)
+    return [Document(page_content=f"ddl: CREATE OR REPLACE MODEL {m.project}.{m.dataset_id}.{m.model_id} "
+                                  f"OPTIONS (model_type='{m.model_type}');",
+                     metadata={"model_id": m.model_id})
+            for m in models]
+
+
+def load_context():
+    print(f"load_context for {st.session_state.project}.{st.session_state.dataset}")
     ddls_docs = BigQueryLoader(
         get_ddls_query(st.session_state.project, st.session_state.dataset),
         metadata_columns="table_name", page_content_columns="ddl"
     ).load()
+    models_docs = get_bigquery_models(st.session_state.project, st.session_state.dataset)
     ddls = "\n\n".join(
         format_document(doc, PromptTemplate.from_template("{page_content}"))
-        for doc in ddls_docs
+        for doc in ddls_docs + models_docs
     )
     prompt = PromptTemplate.from_template(
-        "Suggest a BigQuery sql query that answer this user request '{request}' :\n\n" + ddls
+        "Suggest a BigQuery sql query that answer this user request '{request}' :\n\n" + ddls + "\n\n"
     )
+    print(prompt.template)
 
     # Define the chain
+    st.session_state.llm = VertexAI(model_name=st.session_state["model"], max_output_tokens=2048)
     st.session_state.chain = ({"request": RunnablePassthrough()} | prompt | st.session_state.llm)
     st.toast(f"context updated from {st.session_state.project}.{st.session_state.dataset}")
 
@@ -46,12 +61,12 @@ def run():
     with st.sidebar:
         with st.form("context"):
             st.write("Define your context")
+            st.selectbox("Model", ("gemini-pro", "code-bison", "code-gecko"), key="model")
             st.text_input("Project", key="project", value="bigquery-public-data")
             st.text_input("Dataset", key="dataset", value="iowa_liquor_sales")
-            st.form_submit_button("Submit", on_click=load_ddls)
+            st.form_submit_button("Submit", on_click=load_context)
 
-    st.session_state.llm = VertexAI(model_name="gemini-pro", max_output_tokens=2048)
-    load_ddls()
+    load_context()
 
     if "messages" not in st.session_state:
         st.session_state["messages"] = [{"role": "ai", "content": "How can I help you?"}]
