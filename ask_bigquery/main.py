@@ -49,9 +49,9 @@ def load_context():
     print(prompt.template)
 
     # Define the chain
-    st.session_state.llm = VertexAI(model_name=st.session_state["model"], max_output_tokens=2048)
+    st.session_state.llm = VertexAI(model_name=st.session_state.model, max_output_tokens=2048)
     st.session_state.chain = ({"request": RunnablePassthrough()} | prompt | st.session_state.llm)
-    st.toast(f"context updated from {st.session_state.project}.{st.session_state.dataset}")
+    st.toast(f"context updated from {st.session_state.project}.{st.session_state.dataset} using {st.session_state.model}")
 
 
 def run():
@@ -61,7 +61,7 @@ def run():
     with st.sidebar:
         with st.form("context"):
             st.write("Define your context")
-            st.selectbox("Model", ("gemini-pro", "code-bison", "code-gecko"), key="model")
+            st.selectbox("Model", ("gemini-pro", "code-bison"), key="model")
             st.text_input("Project", key="project", value="bigquery-public-data")
             st.text_input("Dataset", key="dataset", value="iowa_liquor_sales")
             st.form_submit_button("Submit", on_click=load_context)
