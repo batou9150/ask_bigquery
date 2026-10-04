@@ -8,12 +8,9 @@ from mcp import Client
 from mcp.server.mcpserver import MCPServer
 from mcp.types import TextContent
 
-from tests.conftest import DATASET, ORDERS
-from tests.fakes import FakeClient, FakeJob, table_ref
+from tests.fakes import DATASET, GROUP_BY, ORDERS, FakeClient, FakeJob, table_ref
 
 pytestmark = pytest.mark.anyio
-
-GROUP_BY = "SELECT status, COUNT(*) AS n FROM orders GROUP BY status"
 
 
 @pytest.fixture
