@@ -13,10 +13,13 @@ from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
 from pydantic import Field
+from starlette.requests import Request
+from starlette.responses import HTMLResponse
 
 from ask_bigquery import __version__
 from ask_bigquery.config import Settings
 from ask_bigquery.errors import AskBigQueryError, QueryError
+from ask_bigquery.home import render_home
 from ask_bigquery.models import CostEstimate, DatasetInfo, QueryResult, TableInfo, TableSchema
 from ask_bigquery.warehouse import Warehouse
 
@@ -130,6 +133,13 @@ Answer this question using the ask-bigquery tools: {question}
 5. Answer in plain language, give the key numbers, and show the SQL you ran.
    Say so if the result was truncated or if the data cannot answer the question.
 """
+
+    home_page = render_home(settings)
+
+    @mcp.custom_route("/", methods=["GET"], include_in_schema=False)  # type: ignore[untyped-decorator]
+    async def home(request: Request) -> HTMLResponse:
+        """Setup guide for humans, over HTTP only (e.g. through `gcloud run services proxy`)."""
+        return HTMLResponse(home_page)
 
     return mcp
 

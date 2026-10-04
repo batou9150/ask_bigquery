@@ -173,6 +173,8 @@ claude mcp add --transport http bigquery http://localhost:3000/mcp
 
 (Gemini CLI: `"httpUrl": "http://localhost:3000/mcp"`.) The proxy adds your identity token to each request; nothing is reachable without it.
 
+With the tunnel open, **http://localhost:3000** shows a setup page for the people you share the service with: what the server can access (allowlist, limits), the proxy command, and copy-paste configuration for Claude Code, Gemini CLI and Claude Desktop.
+
 ## Development
 
 ```bash
