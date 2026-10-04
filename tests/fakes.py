@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from google.api_core.exceptions import BadRequest
+from google.api_core.exceptions import BadRequest, NotFound
 from google.cloud import bigquery
 
 
@@ -70,8 +70,10 @@ class FakeClient:
     def list_tables(self, ref: str) -> list[bigquery.Table]:
         return [t for fqn, t in self.tables.items() if fqn.rsplit(".", 1)[0] == ref]
 
-    def get_table(self, ref: str) -> bigquery.Table:
-        return self.tables[ref]
+    def get_table(self, ref: str | bigquery.TableReference) -> bigquery.Table:
+        if str(ref) not in self.tables:
+            raise NotFound(f"Not found: Table {ref}")  # type: ignore[no-untyped-call]
+        return self.tables[str(ref)]
 
     def list_rows(self, table: bigquery.Table, max_results: int) -> list[dict[str, Any]]:
         return self.table_rows.get(str(table.reference), [])[:max_results]
