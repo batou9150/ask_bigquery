@@ -1,0 +1,60 @@
+[project]
+name = "ask-bigquery"
+version = "2.0.0"
+description = "A minimal, read-only BigQuery MCP server with explicit cost and safety guardrails."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "batou9150" }]
+requires-python = ">=3.12"
+dependencies = [
+    "google-cloud-bigquery>=3.25",
+    "mcp>=1.9",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.4",
+]
+
+[project.scripts]
+ask-bigquery = "ask_bigquery.__main__:main"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.11",
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "pyyaml>=6",
+    "ruff>=0.6",
+    "types-pyyaml",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]
+python_version = "3.12"
+files = ["src", "tests"]
+
+[[tool.mypy.overrides]]
+module = ["google.cloud.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = ["integration: hits real BigQuery (needs ADC and BQ_BILLING_PROJECT)"]
+addopts = "-m 'not integration'"
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true

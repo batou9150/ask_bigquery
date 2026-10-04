@@ -1,7 +1,0 @@
-streamlit
-langchain
-langchain-core
-langchain-community
-langchain-google-vertexai
-google-cloud-aiplatform
-google-cloud-bigquery[pandas]
