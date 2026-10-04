@@ -62,7 +62,8 @@ def test_select_runs(warehouse: Warehouse) -> None:
         ),
         pytest.param("SELECT * FROM `bigquery-public-data.samples.shakespeare`", id="allowlist"),
         pytest.param(
-            f"SELECT * FROM `{DATASET}`.INFORMATION_SCHEMA.TABLES", id="information-schema"
+            "SELECT * FROM `bigquery-public-data.samples`.INFORMATION_SCHEMA.TABLES",
+            id="information-schema-other-dataset",
         ),
         pytest.param(
             "SELECT * FROM `region-us`.INFORMATION_SCHEMA.JOBS", id="information-schema-jobs"
@@ -75,6 +76,11 @@ def test_refused(warehouse: Warehouse, sql: str) -> None:
     with pytest.raises(AskBigQueryError) as error:
         warehouse.run_query(sql, max_rows=10)
     print(f"{sql!r} -> {error.value}")
+
+
+def test_information_schema_of_allowed_dataset_runs(warehouse: Warehouse) -> None:
+    sql = f"SELECT table_name FROM `{DATASET}`.INFORMATION_SCHEMA.TABLES"
+    assert warehouse.run_query(sql, max_rows=100).row_count > 0
 
 
 def test_cost_cap(client: bigquery.Client) -> None:

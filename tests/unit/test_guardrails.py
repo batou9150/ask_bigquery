@@ -53,6 +53,26 @@ def test_same_dataset_name_in_another_project_is_refused() -> None:
         ensure_dataset_allowed("attacker-project.thelook_ecommerce", ALLOWED)
 
 
+# Shapes of `referenced_tables` observed on real BigQuery dry-runs.
+def test_information_schema_of_an_allowed_dataset_passes() -> None:
+    tables = ("bigquery-public-data.thelook_ecommerce.INFORMATION_SCHEMA.TABLES",)
+    check_query(plan(tables=tables), ALLOWED, MAX_BYTES)
+
+
+@pytest.mark.parametrize(
+    "table",
+    [
+        # `region-us`.INFORMATION_SCHEMA.JOBS is reported under the billing project
+        "billing-project.region-us.INFORMATION_SCHEMA.JOBS",
+        "billing-project.region-us.INFORMATION_SCHEMA.SCHEMATA",
+        "bigquery-public-data.samples.INFORMATION_SCHEMA.TABLES",
+    ],
+)
+def test_information_schema_outside_allowlist_is_refused(table: str) -> None:
+    with pytest.raises(GuardrailError, match="not allowed"):
+        check_query(plan(tables=(table,)), ALLOWED, MAX_BYTES)
+
+
 def test_query_without_referenced_tables_is_refused() -> None:
     with pytest.raises(GuardrailError, match="does not reference any table"):
         check_query(plan(tables=()), ALLOWED, MAX_BYTES)
@@ -85,6 +105,19 @@ def test_dry_run_reads_bigquery_plan() -> None:
     ((_, config),) = client.query_calls
     assert config.dry_run is True
     assert config.use_query_cache is False
+
+
+def test_bigquery_error_messages_drop_the_request_url() -> None:
+    client = FakeClient()
+    client.errors["DELETE FROM t WHERE TRUE"] = (
+        "POST https://bigquery.googleapis.com/bigquery/v2/projects/billing/jobs?prettyPrint=false: "
+        "Access Denied: Table p:d.t: Permission bigquery.tables.updateData denied"
+    )
+    with pytest.raises(QueryError) as error:
+        dry_run(cast(bigquery.Client, client), "DELETE FROM t WHERE TRUE", "US")
+    assert str(error.value) == (
+        "[BIGQUERY_ERROR] Access Denied: Table p:d.t: Permission bigquery.tables.updateData denied"
+    )
 
 
 def test_dry_run_turns_bigquery_errors_into_query_errors() -> None:

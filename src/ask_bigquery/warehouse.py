@@ -126,7 +126,7 @@ class Warehouse:
             job = self._client.query(sql, job_config=config, location=settings.bq_location)
             rows = job.result(max_results=max_rows, timeout=settings.bq_job_timeout_s)
         except GoogleAPICallError as error:
-            raise QueryError(error.message) from error
+            raise QueryError.from_api(error) from error
         except concurrent.futures.TimeoutError as error:
             raise QueryError(
                 f"The query did not finish within {settings.bq_job_timeout_s:g}s."

@@ -44,7 +44,7 @@ echo "==> Deploying $SERVICE to Cloud Run ($REGION)"
 # `^;^` makes `;` the separator, since BQ_ALLOWED_DATASETS contains commas.
 gcloud run deploy "$SERVICE" \
   --project "$PROJECT_ID" --region "$REGION" \
-  --source . \
+  --source . --quiet \
   --service-account "$SA_EMAIL" \
   --no-allow-unauthenticated \
   --max-instances 3 --memory 512Mi --cpu 1 --timeout 300 \

@@ -32,7 +32,7 @@ def dry_run(client: bigquery.Client, sql: str, location: str) -> DryRun:
     try:
         job = client.query(sql, job_config=config, location=location)
     except GoogleAPICallError as error:
-        raise QueryError(error.message) from error
+        raise QueryError.from_api(error) from error
     return DryRun(
         statement_type=job.statement_type,
         total_bytes_processed=job.total_bytes_processed or 0,

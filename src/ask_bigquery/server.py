@@ -142,4 +142,4 @@ def tool_errors() -> Iterator[None]:
     except AskBigQueryError as error:
         raise ToolError(str(error)) from error
     except GoogleAPICallError as error:  # e.g. NotFound on a table name
-        raise ToolError(str(QueryError(error.message))) from error
+        raise ToolError(str(QueryError.from_api(error))) from error

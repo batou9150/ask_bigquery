@@ -2,6 +2,13 @@
 
 from __future__ import annotations
 
+import re
+
+from google.api_core.exceptions import GoogleAPICallError
+
+# HTTP errors start with the request line, e.g. "POST https://bigquery.googleapis.com/...: "
+_REQUEST_PREFIX = re.compile(r"^[A-Z]+ https?://\S+: ")
+
 
 class AskBigQueryError(Exception):
     """Base class. `str(error)` is what the MCP client (and the LLM) will read."""
@@ -22,3 +29,8 @@ class QueryError(AskBigQueryError):
     """BigQuery rejected the query (syntax error, unknown column, quota...)."""
 
     code = "BIGQUERY_ERROR"
+
+    @classmethod
+    def from_api(cls, error: GoogleAPICallError) -> QueryError:
+        """Keep BigQuery's own explanation, drop the request URL."""
+        return cls(_REQUEST_PREFIX.sub("", error.message))
