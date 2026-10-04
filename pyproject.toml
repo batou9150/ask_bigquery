@@ -41,7 +41,7 @@ select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
 strict = true
 plugins = ["pydantic.mypy"]
 python_version = "3.12"
-files = ["src", "tests"]
+files = ["src", "tests", "evals"]
 
 [[tool.mypy.overrides]]
 module = ["google.cloud.*"]

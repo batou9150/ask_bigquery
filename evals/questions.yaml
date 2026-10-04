@@ -1,0 +1,75 @@
+# Each question is answered by an LLM through the MCP server. The expected answer is the
+# first cell of `reference_sql`, run at eval time: thelook_ecommerce is regenerated
+# regularly, so hard-coded numbers would go stale.
+# `kind`: number (1% tolerance) or text (case-insensitive match).
+
+- id: categories
+  question: How many distinct product categories are there?
+  kind: number
+  reference_sql: |
+    SELECT COUNT(DISTINCT category) FROM `bigquery-public-data.thelook_ecommerce.products`
+
+- id: distribution_centers
+  question: How many distribution centers are there?
+  kind: number
+  reference_sql: |
+    SELECT COUNT(*) FROM `bigquery-public-data.thelook_ecommerce.distribution_centers`
+
+- id: top_category
+  question: Which product category has the most products?
+  kind: text
+  reference_sql: |
+    SELECT category FROM `bigquery-public-data.thelook_ecommerce.products`
+    GROUP BY category ORDER BY COUNT(*) DESC LIMIT 1
+
+- id: jeans_avg_price
+  question: What is the average retail price of products in the Jeans category, in dollars?
+  kind: number
+  reference_sql: |
+    SELECT ROUND(AVG(retail_price), 2) FROM `bigquery-public-data.thelook_ecommerce.products`
+    WHERE category = 'Jeans'
+
+- id: top_country
+  question: Which country do the most users come from?
+  kind: text
+  reference_sql: |
+    SELECT country FROM `bigquery-public-data.thelook_ecommerce.users`
+    GROUP BY country ORDER BY COUNT(*) DESC LIMIT 1
+
+- id: female_share
+  question: What percentage of users are female?
+  kind: number
+  reference_sql: |
+    SELECT ROUND(100 * COUNTIF(gender = 'F') / COUNT(*), 1)
+    FROM `bigquery-public-data.thelook_ecommerce.users`
+
+- id: returned_orders
+  question: How many orders have the status Returned?
+  kind: number
+  reference_sql: |
+    SELECT COUNT(*) FROM `bigquery-public-data.thelook_ecommerce.orders` WHERE status = 'Returned'
+
+- id: top_traffic_source
+  question: Which traffic source brought the most users?
+  kind: text
+  reference_sql: |
+    SELECT traffic_source FROM `bigquery-public-data.thelook_ecommerce.users`
+    GROUP BY traffic_source ORDER BY COUNT(*) DESC LIMIT 1
+
+- id: revenue_2023
+  question: >-
+    What was the total revenue (sum of sale prices) of order items with status Complete
+    that were created in 2023, in dollars?
+  kind: number
+  reference_sql: |
+    SELECT ROUND(SUM(sale_price)) FROM `bigquery-public-data.thelook_ecommerce.order_items`
+    WHERE status = 'Complete' AND EXTRACT(YEAR FROM created_at) = 2023
+
+- id: top_distribution_center
+  question: Which distribution center has the most products?
+  kind: text
+  reference_sql: |
+    SELECT dc.name FROM `bigquery-public-data.thelook_ecommerce.products` AS p
+    JOIN `bigquery-public-data.thelook_ecommerce.distribution_centers` AS dc
+      ON p.distribution_center_id = dc.id
+    GROUP BY dc.name ORDER BY COUNT(*) DESC LIMIT 1
