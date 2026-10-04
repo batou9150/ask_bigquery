@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import sys
 
+from google.auth.exceptions import DefaultCredentialsError
 from google.cloud import bigquery
 from pydantic import ValidationError
 
@@ -44,7 +45,13 @@ def main(argv: list[str] | None = None) -> None:
             f"  {'.'.join(map(str, e['loc'])).upper()}: {e['msg']}" for e in error.errors()
         )
         sys.exit(f"ask-bigquery: invalid configuration\n{problems}")
-    serve(settings)
+    try:
+        serve(settings)
+    except DefaultCredentialsError:
+        sys.exit(
+            "ask-bigquery: no Google credentials found. Run "
+            "`gcloud auth application-default login`, or run as a service account."
+        )
 
 
 if __name__ == "__main__":
