@@ -215,7 +215,7 @@ Every question took 3 turns: the model often writes the query straight away, sin
 
 ## Why not the official Google BigQuery MCP?
 
-Use it if it fits: Google offers a managed BigQuery MCP server and [MCP Toolbox for Databases](https://github.com/googleapis/genai-toolbox), which cover far more ground and are maintained by Google.
+Use it if it fits: Google offers a [managed BigQuery MCP server](https://docs.cloud.google.com/bigquery/docs/use-bigquery-mcp) and [MCP Toolbox for Databases](https://github.com/googleapis/genai-toolbox), which cover far more ground and are maintained by Google.
 
 This repository does not try to replace them. It is a **minimal, readable reference**: about 500 lines of Python, which you can audit in one sitting and fork. Its read-only and cost guardrails are explicit, enforced from BigQuery's own dry-run, and tested one by one. It is meant as a starting point when you want to know, and decide, exactly what an LLM can do to your data warehouse.
 
