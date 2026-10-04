@@ -194,7 +194,22 @@ BQ_BILLING_PROJECT=my-gcp-project uv run python evals/run_eval.py --model sonnet
 ```
 
 <!-- EVAL_RESULTS -->
-*Results not recorded yet.*
+Last run on 2026-10-04 with Claude Code (`--model sonnet`): **10/10 correct**, about 10 s and $0.07 of LLM usage per question.
+
+| question | expected | answer | ok | turns | time (s) | LLM cost ($) |
+|---|---|---|---|---|---|---|
+| categories | 26 | 26 | ✅ | 3 | 10.7 | 0.072 |
+| distribution_centers | 10 | 10 | ✅ | 3 | 10.4 | 0.066 |
+| top_category | Intimates | Intimates | ✅ | 3 | 11.3 | 0.067 |
+| jeans_avg_price | 97.85 | 97.85 | ✅ | 3 | 10.1 | 0.066 |
+| top_country | China | China | ✅ | 3 | 9.9 | 0.067 |
+| female_share | 50.1 | 50.103 | ✅ | 3 | 10.0 | 0.066 |
+| returned_orders | 12356 | 12356 | ✅ | 3 | 9.8 | 0.066 |
+| top_traffic_source | Search | Search | ✅ | 3 | 9.9 | 0.067 |
+| revenue_2023 | 297613.0 | 297613.11 | ✅ | 3 | 10.5 | 0.067 |
+| top_distribution_center | Chicago IL | Chicago IL | ✅ | 3 | 10.2 | 0.069 |
+
+Every question took 3 turns: the model often writes the query straight away, since `thelook_ecommerce` is a well-known public dataset. On your own data, expect it to call `list_tables` and `get_table_schema` first, as the `analyze_question` prompt asks.
 <!-- /EVAL_RESULTS -->
 
 ## Why not the official Google BigQuery MCP?
