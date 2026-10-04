@@ -1,0 +1,77 @@
+"""An in-memory stand-in for `google.cloud.bigquery.Client`, covering what the server uses."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any
+
+from google.api_core.exceptions import BadRequest
+from google.cloud import bigquery
+
+
+@dataclass
+class FakeJob:
+    statement_type: str | None = "SELECT"
+    total_bytes_processed: int | None = 1_000
+    referenced_tables: list[bigquery.TableReference] = field(default_factory=list)
+    rows: list[dict[str, Any]] = field(default_factory=list)
+    schema: list[bigquery.SchemaField] = field(default_factory=list)
+    job_id: str = "job_123"
+    total_bytes_billed: int | None = 10_485_760
+
+    def result(self, max_results: int | None = None, timeout: float | None = None) -> FakeRows:
+        rows = self.rows if max_results is None else self.rows[:max_results]
+        return FakeRows(rows=rows, schema=self.schema, total_rows=len(self.rows))
+
+
+@dataclass
+class FakeRows:
+    rows: list[dict[str, Any]]
+    schema: list[bigquery.SchemaField]
+    total_rows: int
+
+    def __iter__(self) -> Any:
+        return iter(self.rows)
+
+
+def table_ref(fqn: str) -> bigquery.TableReference:
+    return bigquery.TableReference.from_string(fqn)
+
+
+class FakeClient:
+    """Answers `query()` from a dict keyed by SQL and records every job config it receives."""
+
+    def __init__(self) -> None:
+        self.jobs: dict[str, FakeJob] = {}
+        self.errors: dict[str, str] = {}
+        self.datasets: dict[str, bigquery.Dataset] = {}
+        self.tables: dict[str, bigquery.Table] = {}
+        self.table_rows: dict[str, list[dict[str, Any]]] = {}
+        self.query_calls: list[tuple[str, bigquery.QueryJobConfig]] = []
+
+    # --- queries ------------------------------------------------------------
+    def query(
+        self, sql: str, job_config: bigquery.QueryJobConfig, location: str | None = None
+    ) -> FakeJob:
+        self.query_calls.append((sql, job_config))
+        if sql in self.errors:
+            raise BadRequest(self.errors[sql])  # type: ignore[no-untyped-call]
+        return self.jobs.get(sql, FakeJob())
+
+    @property
+    def executed(self) -> list[bigquery.QueryJobConfig]:
+        """Configs of the jobs that actually ran (i.e. not dry-runs)."""
+        return [config for _, config in self.query_calls if not config.dry_run]
+
+    # --- metadata -----------------------------------------------------------
+    def get_dataset(self, ref: str) -> bigquery.Dataset:
+        return self.datasets[ref]
+
+    def list_tables(self, ref: str) -> list[bigquery.Table]:
+        return [t for fqn, t in self.tables.items() if fqn.rsplit(".", 1)[0] == ref]
+
+    def get_table(self, ref: str) -> bigquery.Table:
+        return self.tables[ref]
+
+    def list_rows(self, table: bigquery.Table, max_results: int) -> list[dict[str, Any]]:
+        return self.table_rows.get(str(table.reference), [])[:max_results]
